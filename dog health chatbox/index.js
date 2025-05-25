@@ -1,104 +1,189 @@
-'use strict';
+"use strict";
 
-var test = require('tape');
+var conversions = {};
+module.exports = conversions;
 
-var getSideChannelList = require('../');
+function sign(x) {
+    return x < 0 ? -1 : 1;
+}
 
-test('getSideChannelList', function (t) {
-	t.test('export', function (st) {
-		st.equal(typeof getSideChannelList, 'function', 'is a function');
+function evenRound(x) {
+    // Round x to the nearest integer, choosing the even integer if it lies halfway between two.
+    if ((x % 1) === 0.5 && (x & 1) === 0) { // [even number].5; round down (i.e. floor)
+        return Math.floor(x);
+    } else {
+        return Math.round(x);
+    }
+}
 
-		st.equal(getSideChannelList.length, 0, 'takes no arguments');
+function createNumberConversion(bitLength, typeOpts) {
+    if (!typeOpts.unsigned) {
+        --bitLength;
+    }
+    const lowerBound = typeOpts.unsigned ? 0 : -Math.pow(2, bitLength);
+    const upperBound = Math.pow(2, bitLength) - 1;
 
-		var channel = getSideChannelList();
-		st.ok(channel, 'is truthy');
-		st.equal(typeof channel, 'object', 'is an object');
-		st.end();
-	});
+    const moduloVal = typeOpts.moduloBitLength ? Math.pow(2, typeOpts.moduloBitLength) : Math.pow(2, bitLength);
+    const moduloBound = typeOpts.moduloBitLength ? Math.pow(2, typeOpts.moduloBitLength - 1) : Math.pow(2, bitLength - 1);
 
-	t.test('assert', function (st) {
-		var channel = getSideChannelList();
-		st['throws'](
-			function () { channel.assert({}); },
-			TypeError,
-			'nonexistent value throws'
-		);
+    return function(V, opts) {
+        if (!opts) opts = {};
 
-		var o = {};
-		channel.set(o, 'data');
-		st.doesNotThrow(function () { channel.assert(o); }, 'existent value noops');
+        let x = +V;
 
-		st.end();
-	});
+        if (opts.enforceRange) {
+            if (!Number.isFinite(x)) {
+                throw new TypeError("Argument is not a finite number");
+            }
 
-	t.test('has', function (st) {
-		var channel = getSideChannelList();
-		/** @type {unknown[]} */ var o = [];
+            x = sign(x) * Math.floor(Math.abs(x));
+            if (x < lowerBound || x > upperBound) {
+                throw new TypeError("Argument is not in byte range");
+            }
 
-		st.equal(channel.has(o), false, 'nonexistent value yields false');
+            return x;
+        }
 
-		channel.set(o, 'foo');
-		st.equal(channel.has(o), true, 'existent value yields true');
+        if (!isNaN(x) && opts.clamp) {
+            x = evenRound(x);
 
-		st.equal(channel.has('abc'), false, 'non object value non existent yields false');
+            if (x < lowerBound) x = lowerBound;
+            if (x > upperBound) x = upperBound;
+            return x;
+        }
 
-		channel.set('abc', 'foo');
-		st.equal(channel.has('abc'), true, 'non object value that exists yields true');
+        if (!Number.isFinite(x) || x === 0) {
+            return 0;
+        }
 
-		st.end();
-	});
+        x = sign(x) * Math.floor(Math.abs(x));
+        x = x % moduloVal;
 
-	t.test('get', function (st) {
-		var channel = getSideChannelList();
-		var o = {};
-		st.equal(channel.get(o), undefined, 'nonexistent value yields undefined');
+        if (!typeOpts.unsigned && x >= moduloBound) {
+            return x - moduloVal;
+        } else if (typeOpts.unsigned) {
+            if (x < 0) {
+              x += moduloVal;
+            } else if (x === -0) { // don't return negative zero
+              return 0;
+            }
+        }
 
-		var data = {};
-		channel.set(o, data);
-		st.equal(channel.get(o), data, '"get" yields data set by "set"');
+        return x;
+    }
+}
 
-		st.end();
-	});
+conversions["void"] = function () {
+    return undefined;
+};
 
-	t.test('set', function (st) {
-		var channel = getSideChannelList();
-		var o = function () {};
-		st.equal(channel.get(o), undefined, 'value not set');
+conversions["boolean"] = function (val) {
+    return !!val;
+};
 
-		channel.set(o, 42);
-		st.equal(channel.get(o), 42, 'value was set');
+conversions["byte"] = createNumberConversion(8, { unsigned: false });
+conversions["octet"] = createNumberConversion(8, { unsigned: true });
 
-		channel.set(o, Infinity);
-		st.equal(channel.get(o), Infinity, 'value was set again');
+conversions["short"] = createNumberConversion(16, { unsigned: false });
+conversions["unsigned short"] = createNumberConversion(16, { unsigned: true });
 
-		var o2 = {};
-		channel.set(o2, 17);
-		st.equal(channel.get(o), Infinity, 'o is not modified');
-		st.equal(channel.get(o2), 17, 'o2 is set');
+conversions["long"] = createNumberConversion(32, { unsigned: false });
+conversions["unsigned long"] = createNumberConversion(32, { unsigned: true });
 
-		channel.set(o, 14);
-		st.equal(channel.get(o), 14, 'o is modified');
-		st.equal(channel.get(o2), 17, 'o2 is not modified');
+conversions["long long"] = createNumberConversion(32, { unsigned: false, moduloBitLength: 64 });
+conversions["unsigned long long"] = createNumberConversion(32, { unsigned: true, moduloBitLength: 64 });
 
-		st.end();
-	});
+conversions["double"] = function (V) {
+    const x = +V;
 
-	t.test('delete', function (st) {
-		var channel = getSideChannelList();
-		var o = {};
-		st.equal(channel['delete']({}), false, 'nonexistent value yields false');
+    if (!Number.isFinite(x)) {
+        throw new TypeError("Argument is not a finite floating-point value");
+    }
 
-		channel.set(o, 42);
-		st.equal(channel.has(o), true, 'value is set');
+    return x;
+};
 
-		st.equal(channel['delete']({}), false, 'nonexistent value still yields false');
+conversions["unrestricted double"] = function (V) {
+    const x = +V;
 
-		st.equal(channel['delete'](o), true, 'deleted value yields true');
+    if (isNaN(x)) {
+        throw new TypeError("Argument is NaN");
+    }
 
-		st.equal(channel.has(o), false, 'value is no longer set');
+    return x;
+};
 
-		st.end();
-	});
+// not quite valid, but good enough for JS
+conversions["float"] = conversions["double"];
+conversions["unrestricted float"] = conversions["unrestricted double"];
 
-	t.end();
-});
+conversions["DOMString"] = function (V, opts) {
+    if (!opts) opts = {};
+
+    if (opts.treatNullAsEmptyString && V === null) {
+        return "";
+    }
+
+    return String(V);
+};
+
+conversions["ByteString"] = function (V, opts) {
+    const x = String(V);
+    let c = undefined;
+    for (let i = 0; (c = x.codePointAt(i)) !== undefined; ++i) {
+        if (c > 255) {
+            throw new TypeError("Argument is not a valid bytestring");
+        }
+    }
+
+    return x;
+};
+
+conversions["USVString"] = function (V) {
+    const S = String(V);
+    const n = S.length;
+    const U = [];
+    for (let i = 0; i < n; ++i) {
+        const c = S.charCodeAt(i);
+        if (c < 0xD800 || c > 0xDFFF) {
+            U.push(String.fromCodePoint(c));
+        } else if (0xDC00 <= c && c <= 0xDFFF) {
+            U.push(String.fromCodePoint(0xFFFD));
+        } else {
+            if (i === n - 1) {
+                U.push(String.fromCodePoint(0xFFFD));
+            } else {
+                const d = S.charCodeAt(i + 1);
+                if (0xDC00 <= d && d <= 0xDFFF) {
+                    const a = c & 0x3FF;
+                    const b = d & 0x3FF;
+                    U.push(String.fromCodePoint((2 << 15) + (2 << 9) * a + b));
+                    ++i;
+                } else {
+                    U.push(String.fromCodePoint(0xFFFD));
+                }
+            }
+        }
+    }
+
+    return U.join('');
+};
+
+conversions["Date"] = function (V, opts) {
+    if (!(V instanceof Date)) {
+        throw new TypeError("Argument is not a Date object");
+    }
+    if (isNaN(V)) {
+        return undefined;
+    }
+
+    return V;
+};
+
+conversions["RegExp"] = function (V, opts) {
+    if (!(V instanceof RegExp)) {
+        V = new RegExp(V);
+    }
+
+    return V;
+};
