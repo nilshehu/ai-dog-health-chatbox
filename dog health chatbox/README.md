@@ -1,63 +1,46 @@
-# es-object-atoms <sup>[![Version Badge][npm-version-svg]][package-url]</sup>
+# has-symbols <sup>[![Version Badge][2]][1]</sup>
 
 [![github actions][actions-image]][actions-url]
 [![coverage][codecov-image]][codecov-url]
+[![dependency status][5]][6]
+[![dev dependency status][7]][8]
 [![License][license-image]][license-url]
 [![Downloads][downloads-image]][downloads-url]
 
-[![npm badge][npm-badge-png]][package-url]
+[![npm badge][11]][1]
 
-ES Object-related atoms: Object, ToObject, RequireObjectCoercible.
+Determine if the JS environment has Symbol support. Supports spec, or shams.
 
 ## Example
 
 ```js
-const assert = require('assert');
+var hasSymbols = require('has-symbols');
 
-const $Object = require('es-object-atoms');
-const isObject = require('es-object-atoms/isObject');
-const ToObject = require('es-object-atoms/ToObject');
-const RequireObjectCoercible = require('es-object-atoms/RequireObjectCoercible');
+hasSymbols() === true; // if the environment has native Symbol support. Not polyfillable, not forgeable.
 
-assert.equal($Object, Object);
-assert.throws(() => ToObject(null), TypeError);
-assert.throws(() => ToObject(undefined), TypeError);
-assert.throws(() => RequireObjectCoercible(null), TypeError);
-assert.throws(() => RequireObjectCoercible(undefined), TypeError);
-
-assert.equal(isObject(undefined), false);
-assert.equal(isObject(null), false);
-assert.equal(isObject({}), true);
-assert.equal(isObject([]), true);
-assert.equal(isObject(function () {}), true);
-
-assert.deepEqual(RequireObjectCoercible(true), true);
-assert.deepEqual(ToObject(true), Object(true));
-
-const obj = {};
-assert.equal(RequireObjectCoercible(obj), obj);
-assert.equal(ToObject(obj), obj);
+var hasSymbolsKinda = require('has-symbols/shams');
+hasSymbolsKinda() === true; // if the environment has a Symbol sham that mostly follows the spec.
 ```
+
+## Supported Symbol shams
+ - get-own-property-symbols [npm](https://www.npmjs.com/package/get-own-property-symbols) | [github](https://github.com/WebReflection/get-own-property-symbols)
+ - core-js [npm](https://www.npmjs.com/package/core-js) | [github](https://github.com/zloirock/core-js)
 
 ## Tests
 Simply clone the repo, `npm install`, and run `npm test`
 
-## Security
-
-Please email [@ljharb](https://github.com/ljharb) or see https://tidelift.com/security if you have a potential security vulnerability to report.
-
-[package-url]: https://npmjs.org/package/es-object-atoms
-[npm-version-svg]: https://versionbadg.es/ljharb/es-object-atoms.svg
-[deps-svg]: https://david-dm.org/ljharb/es-object-atoms.svg
-[deps-url]: https://david-dm.org/ljharb/es-object-atoms
-[dev-deps-svg]: https://david-dm.org/ljharb/es-object-atoms/dev-status.svg
-[dev-deps-url]: https://david-dm.org/ljharb/es-object-atoms#info=devDependencies
-[npm-badge-png]: https://nodei.co/npm/es-object-atoms.png?downloads=true&stars=true
-[license-image]: https://img.shields.io/npm/l/es-object-atoms.svg
+[1]: https://npmjs.org/package/has-symbols
+[2]: https://versionbadg.es/inspect-js/has-symbols.svg
+[5]: https://david-dm.org/inspect-js/has-symbols.svg
+[6]: https://david-dm.org/inspect-js/has-symbols
+[7]: https://david-dm.org/inspect-js/has-symbols/dev-status.svg
+[8]: https://david-dm.org/inspect-js/has-symbols#info=devDependencies
+[11]: https://nodei.co/npm/has-symbols.png?downloads=true&stars=true
+[license-image]: https://img.shields.io/npm/l/has-symbols.svg
 [license-url]: LICENSE
-[downloads-image]: https://img.shields.io/npm/dm/es-object.svg
-[downloads-url]: https://npm-stat.com/charts.html?package=es-object-atoms
-[codecov-image]: https://codecov.io/gh/ljharb/es-object-atoms/branch/main/graphs/badge.svg
-[codecov-url]: https://app.codecov.io/gh/ljharb/es-object-atoms/
-[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/ljharb/es-object-atoms
-[actions-url]: https://github.com/ljharb/es-object-atoms/actions
+[downloads-image]: https://img.shields.io/npm/dm/has-symbols.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=has-symbols
+[codecov-image]: https://codecov.io/gh/inspect-js/has-symbols/branch/main/graphs/badge.svg
+[codecov-url]: https://app.codecov.io/gh/inspect-js/has-symbols/
+[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/inspect-js/has-symbols
+[actions-url]: https://github.com/inspect-js/has-symbols/actions

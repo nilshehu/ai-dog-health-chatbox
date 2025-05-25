@@ -1,38 +1,22 @@
 'use strict';
 
 var test = require('tape');
+var hasSymbols = require('../');
+var runSymbolTests = require('./tests');
 
-var $Object = require('../');
-var isObject = require('../isObject');
-var ToObject = require('../ToObject');
-var RequireObjectCoercible = require('..//RequireObjectCoercible');
+test('interface', function (t) {
+	t.equal(typeof hasSymbols, 'function', 'is a function');
+	t.equal(typeof hasSymbols(), 'boolean', 'returns a boolean');
+	t.end();
+});
 
-test('errors', function (t) {
-	t.equal($Object, Object);
-	// @ts-expect-error
-	t['throws'](function () { ToObject(null); }, TypeError);
-	// @ts-expect-error
-	t['throws'](function () { ToObject(undefined); }, TypeError);
-	// @ts-expect-error
-	t['throws'](function () { RequireObjectCoercible(null); }, TypeError);
-	// @ts-expect-error
-	t['throws'](function () { RequireObjectCoercible(undefined); }, TypeError);
+test('Symbols are supported', { skip: !hasSymbols() }, function (t) {
+	runSymbolTests(t);
+	t.end();
+});
 
-	t.deepEqual(RequireObjectCoercible(true), true);
-	t.deepEqual(ToObject(true), Object(true));
-	t.deepEqual(ToObject(42), Object(42));
-	var f = function () {};
-	t.equal(ToObject(f), f);
-
-	t.equal(isObject(undefined), false);
-	t.equal(isObject(null), false);
-	t.equal(isObject({}), true);
-	t.equal(isObject([]), true);
-	t.equal(isObject(function () {}), true);
-
-	var obj = {};
-	t.equal(RequireObjectCoercible(obj), obj);
-	t.equal(ToObject(obj), obj);
-
+test('Symbols are not supported', { skip: hasSymbols() }, function (t) {
+	t.equal(typeof Symbol, 'undefined', 'global Symbol is undefined');
+	t.equal(typeof Object.getOwnPropertySymbols, 'undefined', 'Object.getOwnPropertySymbols does not exist');
 	t.end();
 });
