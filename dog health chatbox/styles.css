@@ -1,0 +1,103 @@
+/* Main Layout */
+.chat-container {
+    height: calc(100vh - 200px);
+}
+
+.messages {
+    height: calc(100% - 60px);
+}
+
+/* Theme Styles */
+body.dark {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+body.light {
+    background-color: #f3f4f6;
+    color: #000000;
+}
+
+.theme-transition {
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* Card Animations */
+.vet-card {
+    transition: transform 0.2s;
+}
+
+.vet-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Emergency Alert Animation */
+.emergency-alert {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { background-color: #fee2e2; }
+    50% { background-color: #fecaca; }
+    100% { background-color: #fee2e2; }
+}
+
+/* Form Styles */
+.auth-form {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+/* Message Styles */
+.message-bubble {
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+/* Image Preview */
+.image-preview {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: cover;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .chat-container {
+        height: calc(100vh - 160px);
+    }
+    
+    .message-bubble {
+        max-width: 90%;
+    }
+}
+
+/* Dark Mode Specific Styles */
+.dark .nav-button {
+    @apply hover:bg-gray-700;
+}
+
+.dark .input-field {
+    @apply bg-gray-700 text-white border-gray-600;
+}
+
+.dark .card {
+    @apply bg-gray-900 text-white;
+}
+
+/* Loading Animation */
+.loading-dots:after {
+    content: '.';
+    animation: dots 1.5s steps(5, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60% { content: '...'; }
+    80%, 100% { content: ''; }
+} 
