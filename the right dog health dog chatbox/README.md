@@ -1,257 +1,203 @@
-# serve-static
+# negotiator
 
-[![NPM Version][npm-version-image]][npm-url]
-[![NPM Downloads][npm-downloads-image]][npm-url]
-[![Linux Build][github-actions-ci-image]][github-actions-ci-url]
-[![Windows Build][appveyor-image]][appveyor-url]
+[![NPM Version][npm-image]][npm-url]
+[![NPM Downloads][downloads-image]][downloads-url]
+[![Node.js Version][node-version-image]][node-version-url]
+[![Build Status][github-actions-ci-image]][github-actions-ci-url]
 [![Test Coverage][coveralls-image]][coveralls-url]
 
-## Install
+An HTTP content negotiator for Node.js
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+## Installation
 
 ```sh
-$ npm install serve-static
+$ npm install negotiator
 ```
 
 ## API
 
 ```js
-var serveStatic = require('serve-static')
+var Negotiator = require('negotiator')
 ```
 
-### serveStatic(root, options)
-
-Create a new middleware function to serve files from within a given root
-directory. The file to serve will be determined by combining `req.url`
-with the provided root directory. When a file is not found, instead of
-sending a 404 response, this module will instead call `next()` to move on
-to the next middleware, allowing for stacking and fall-backs.
-
-#### Options
-
-##### acceptRanges
-
-Enable or disable accepting ranged requests, defaults to true.
-Disabling this will not send `Accept-Ranges` and ignore the contents
-of the `Range` request header.
-
-##### cacheControl
-
-Enable or disable setting `Cache-Control` response header, defaults to
-true. Disabling this will ignore the `immutable` and `maxAge` options.
-
-##### dotfiles
-
- Set how "dotfiles" are treated when encountered. A dotfile is a file
-or directory that begins with a dot ("."). Note this check is done on
-the path itself without checking if the path actually exists on the
-disk. If `root` is specified, only the dotfiles above the root are
-checked (i.e. the root itself can be within a dotfile when set
-to "deny").
-
-  - `'allow'` No special treatment for dotfiles.
-  - `'deny'` Deny a request for a dotfile and 403/`next()`.
-  - `'ignore'` Pretend like the dotfile does not exist and 404/`next()`.
-
-The default value is similar to `'ignore'`, with the exception that this
-default will not ignore the files within a directory that begins with a dot.
-
-##### etag
-
-Enable or disable etag generation, defaults to true.
-
-##### extensions
-
-Set file extension fallbacks. When set, if a file is not found, the given
-extensions will be added to the file name and search for. The first that
-exists will be served. Example: `['html', 'htm']`.
-
-The default value is `false`.
-
-##### fallthrough
-
-Set the middleware to have client errors fall-through as just unhandled
-requests, otherwise forward a client error. The difference is that client
-errors like a bad request or a request to a non-existent file will cause
-this middleware to simply `next()` to your next middleware when this value
-is `true`. When this value is `false`, these errors (even 404s), will invoke
-`next(err)`.
-
-Typically `true` is desired such that multiple physical directories can be
-mapped to the same web address or for routes to fill in non-existent files.
-
-The value `false` can be used if this middleware is mounted at a path that
-is designed to be strictly a single file system directory, which allows for
-short-circuiting 404s for less overhead. This middleware will also reply to
-all methods.
-
-The default value is `true`.
-
-##### immutable
-
-Enable or disable the `immutable` directive in the `Cache-Control` response
-header, defaults to `false`. If set to `true`, the `maxAge` option should
-also be specified to enable caching. The `immutable` directive will prevent
-supported clients from making conditional requests during the life of the
-`maxAge` option to check if the file has changed.
-
-##### index
-
-By default this module will send "index.html" files in response to a request
-on a directory. To disable this set `false` or to supply a new index pass a
-string or an array in preferred order.
-
-##### lastModified
-
-Enable or disable `Last-Modified` header, defaults to true. Uses the file
-system's last modified value.
-
-##### maxAge
-
-Provide a max-age in milliseconds for http caching, defaults to 0. This
-can also be a string accepted by the [ms](https://www.npmjs.org/package/ms#readme)
-module.
-
-##### redirect
-
-Redirect to trailing "/" when the pathname is a dir. Defaults to `true`.
-
-##### setHeaders
-
-Function to set custom headers on response. Alterations to the headers need to
-occur synchronously. The function is called as `fn(res, path, stat)`, where
-the arguments are:
-
-  - `res` the response object
-  - `path` the file path that is being sent
-  - `stat` the stat object of the file that is being sent
-
-## Examples
-
-### Serve files with vanilla node.js http server
+### Accept Negotiation
 
 ```js
-var finalhandler = require('finalhandler')
-var http = require('http')
-var serveStatic = require('serve-static')
+availableMediaTypes = ['text/html', 'text/plain', 'application/json']
 
-// Serve up public/ftp folder
-var serve = serveStatic('public/ftp', { index: ['index.html', 'index.htm'] })
+// The negotiator constructor receives a request object
+negotiator = new Negotiator(request)
 
-// Create server
-var server = http.createServer(function onRequest (req, res) {
-  serve(req, res, finalhandler(req, res))
-})
+// Let's say Accept header is 'text/html, application/*;q=0.2, image/jpeg;q=0.8'
 
-// Listen
-server.listen(3000)
+negotiator.mediaTypes()
+// -> ['text/html', 'image/jpeg', 'application/*']
+
+negotiator.mediaTypes(availableMediaTypes)
+// -> ['text/html', 'application/json']
+
+negotiator.mediaType(availableMediaTypes)
+// -> 'text/html'
 ```
 
-### Serve all files as downloads
+You can check a working example at `examples/accept.js`.
+
+#### Methods
+
+##### mediaType()
+
+Returns the most preferred media type from the client.
+
+##### mediaType(availableMediaType)
+
+Returns the most preferred media type from a list of available media types.
+
+##### mediaTypes()
+
+Returns an array of preferred media types ordered by the client preference.
+
+##### mediaTypes(availableMediaTypes)
+
+Returns an array of preferred media types ordered by priority from a list of
+available media types.
+
+### Accept-Language Negotiation
 
 ```js
-var contentDisposition = require('content-disposition')
-var finalhandler = require('finalhandler')
-var http = require('http')
-var serveStatic = require('serve-static')
+negotiator = new Negotiator(request)
 
-// Serve up public/ftp folder
-var serve = serveStatic('public/ftp', {
-  index: false,
-  setHeaders: setHeaders
-})
+availableLanguages = ['en', 'es', 'fr']
 
-// Set header to force download
-function setHeaders (res, path) {
-  res.setHeader('Content-Disposition', contentDisposition(path))
-}
+// Let's say Accept-Language header is 'en;q=0.8, es, pt'
 
-// Create server
-var server = http.createServer(function onRequest (req, res) {
-  serve(req, res, finalhandler(req, res))
-})
+negotiator.languages()
+// -> ['es', 'pt', 'en']
 
-// Listen
-server.listen(3000)
+negotiator.languages(availableLanguages)
+// -> ['es', 'en']
+
+language = negotiator.language(availableLanguages)
+// -> 'es'
 ```
 
-### Serving using express
+You can check a working example at `examples/language.js`.
 
-#### Simple
+#### Methods
 
-This is a simple example of using Express.
+##### language()
+
+Returns the most preferred language from the client.
+
+##### language(availableLanguages)
+
+Returns the most preferred language from a list of available languages.
+
+##### languages()
+
+Returns an array of preferred languages ordered by the client preference.
+
+##### languages(availableLanguages)
+
+Returns an array of preferred languages ordered by priority from a list of
+available languages.
+
+### Accept-Charset Negotiation
 
 ```js
-var express = require('express')
-var serveStatic = require('serve-static')
+availableCharsets = ['utf-8', 'iso-8859-1', 'iso-8859-5']
 
-var app = express()
+negotiator = new Negotiator(request)
 
-app.use(serveStatic('public/ftp', { index: ['default.html', 'default.htm'] }))
-app.listen(3000)
+// Let's say Accept-Charset header is 'utf-8, iso-8859-1;q=0.8, utf-7;q=0.2'
+
+negotiator.charsets()
+// -> ['utf-8', 'iso-8859-1', 'utf-7']
+
+negotiator.charsets(availableCharsets)
+// -> ['utf-8', 'iso-8859-1']
+
+negotiator.charset(availableCharsets)
+// -> 'utf-8'
 ```
 
-#### Multiple roots
+You can check a working example at `examples/charset.js`.
 
-This example shows a simple way to search through multiple directories.
-Files are searched for in `public-optimized/` first, then `public/` second
-as a fallback.
+#### Methods
+
+##### charset()
+
+Returns the most preferred charset from the client.
+
+##### charset(availableCharsets)
+
+Returns the most preferred charset from a list of available charsets.
+
+##### charsets()
+
+Returns an array of preferred charsets ordered by the client preference.
+
+##### charsets(availableCharsets)
+
+Returns an array of preferred charsets ordered by priority from a list of
+available charsets.
+
+### Accept-Encoding Negotiation
 
 ```js
-var express = require('express')
-var path = require('path')
-var serveStatic = require('serve-static')
+availableEncodings = ['identity', 'gzip']
 
-var app = express()
+negotiator = new Negotiator(request)
 
-app.use(serveStatic(path.join(__dirname, 'public-optimized')))
-app.use(serveStatic(path.join(__dirname, 'public')))
-app.listen(3000)
+// Let's say Accept-Encoding header is 'gzip, compress;q=0.2, identity;q=0.5'
+
+negotiator.encodings()
+// -> ['gzip', 'identity', 'compress']
+
+negotiator.encodings(availableEncodings)
+// -> ['gzip', 'identity']
+
+negotiator.encoding(availableEncodings)
+// -> 'gzip'
 ```
 
-#### Different settings for paths
+You can check a working example at `examples/encoding.js`.
 
-This example shows how to set a different max age depending on the served
-file type. In this example, HTML files are not cached, while everything else
-is for 1 day.
+#### Methods
 
-```js
-var express = require('express')
-var path = require('path')
-var serveStatic = require('serve-static')
+##### encoding()
 
-var app = express()
+Returns the most preferred encoding from the client.
 
-app.use(serveStatic(path.join(__dirname, 'public'), {
-  maxAge: '1d',
-  setHeaders: setCustomCacheControl
-}))
+##### encoding(availableEncodings)
 
-app.listen(3000)
+Returns the most preferred encoding from a list of available encodings.
 
-function setCustomCacheControl (res, path) {
-  if (serveStatic.mime.lookup(path) === 'text/html') {
-    // Custom Cache-Control for HTML files
-    res.setHeader('Cache-Control', 'public, max-age=0')
-  }
-}
-```
+##### encodings()
+
+Returns an array of preferred encodings ordered by the client preference.
+
+##### encodings(availableEncodings)
+
+Returns an array of preferred encodings ordered by priority from a list of
+available encodings.
+
+## See Also
+
+The [accepts](https://npmjs.org/package/accepts#readme) module builds on
+this module and provides an alternative interface, mime type validation,
+and more.
 
 ## License
 
 [MIT](LICENSE)
 
-[appveyor-image]: https://badgen.net/appveyor/ci/dougwilson/serve-static/master?label=windows
-[appveyor-url]: https://ci.appveyor.com/project/dougwilson/serve-static
-[coveralls-image]: https://badgen.net/coveralls/c/github/expressjs/serve-static/master
-[coveralls-url]: https://coveralls.io/r/expressjs/serve-static?branch=master
-[github-actions-ci-image]: https://badgen.net/github/checks/expressjs/serve-static/master?label=linux
-[github-actions-ci-url]: https://github.com/expressjs/serve-static/actions/workflows/ci.yml
-[node-image]: https://badgen.net/npm/node/serve-static
-[node-url]: https://nodejs.org/en/download/
-[npm-downloads-image]: https://badgen.net/npm/dm/serve-static
-[npm-url]: https://npmjs.org/package/serve-static
-[npm-version-image]: https://badgen.net/npm/v/serve-static
+[npm-image]: https://img.shields.io/npm/v/negotiator.svg
+[npm-url]: https://npmjs.org/package/negotiator
+[node-version-image]: https://img.shields.io/node/v/negotiator.svg
+[node-version-url]: https://nodejs.org/en/download/
+[coveralls-image]: https://img.shields.io/coveralls/jshttp/negotiator/master.svg
+[coveralls-url]: https://coveralls.io/r/jshttp/negotiator?branch=master
+[downloads-image]: https://img.shields.io/npm/dm/negotiator.svg
+[downloads-url]: https://npmjs.org/package/negotiator
+[github-actions-ci-image]: https://img.shields.io/github/workflow/status/jshttp/negotiator/ci/master?label=ci
+[github-actions-ci-url]: https://github.com/jshttp/negotiator/actions/workflows/ci.yml
