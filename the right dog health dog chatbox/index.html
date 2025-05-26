@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Health Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+</head>
+<body class="theme-transition light">
+    <nav class="bg-blue-600 dark:bg-gray-900 text-white p-4 theme-transition">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Pet Health Assistant</h1>
+            <div class="flex space-x-4 items-center">
+                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-blue-700 dark:hover:bg-gray-700 focus:outline-none">
+                    <i id="themeIcon" class="fas fa-moon"></i>
+                </button>
+                <button onclick="showChat()" class="px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-gray-700">Chat</button>
+                <button onclick="showVets()" class="px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-gray-700">Emergency</button>
+                <button onclick="showSupport()" class="px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-gray-700">Support</button>
+                <button onclick="showAbout()" class="px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-gray-700">About</button>
+                <div class="border-l border-blue-400 dark:border-gray-600 mx-2"></div>
+                <button onclick="showLogin()" class="px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-gray-700" id="loginBtn">Login</button>
+                <button onclick="showRegister()" class="px-4 py-2 bg-green-500 dark:bg-green-600 rounded hover:bg-green-600 dark:hover:bg-green-700" id="registerBtn">Register</button>
+                <button onclick="logout()" class="px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-gray-700 hidden" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4">
+        <div id="chatSection" class="chat-container bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 theme-transition">
+            <div class="messages overflow-y-auto mb-4 p-4 space-y-4" id="messages">
+                <div class="flex items-start mb-4">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-robot text-blue-500 text-2xl"></i>
+                    </div>
+                    <div class="ml-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-3 theme-transition">
+                        <p class="dark:text-white">Hello! I'm your pet health assistant. I can help you with:</p>
+                        <ul class="list-disc ml-4 mt-2 dark:text-gray-200">
+                            <li>Identifying potential health issues</li>
+                            <li>Emergency situation guidance</li>
+                            <li>Basic care recommendations</li>
+                            <li>Finding emergency vet contacts</li>
+                            <li>Analyzing pet health images</li>
+                        </ul>
+                        <p class="mt-2 dark:text-white">What can I help you with today?</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-4">
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-700 theme-transition" id="dropZone">
+                    <div class="flex items-center justify-between">
+                        <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                        <label for="imageInput" class="cursor-pointer flex items-center text-sm text-gray-600 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400">
+                            <i class="fas fa-camera mr-2"></i>
+                            Upload pet image
+                        </label>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Drag & drop supported</span>
+                    </div>
+                    <div id="imagePreview" class="mt-2 hidden">
+                        <div class="flex items-center gap-2">
+                            <img id="previewImg" class="h-16 w-16 object-cover rounded" alt="Preview">
+                            <button onclick="removeImage()" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <input type="text" id="messageInput" 
+                        class="flex-1 p-3 border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600" 
+                        placeholder="Describe your pet's symptoms or ask a question...">
+                    <button onclick="sendMessage()" 
+                        class="bg-blue-500 text-white px-6 py-3 rounded-r hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="vetSection" class="hidden">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 mb-4 theme-transition">
+                <div class="emergency-alert bg-red-100 dark:bg-red-900 border-l-4 border-red-500 p-4 mb-4 theme-transition">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-red-800 font-bold">Emergency Instructions</h3>
+                            <p class="text-red-700">If your pet is experiencing a life-threatening emergency:</p>
+                            <ol class="list-decimal ml-5 mt-2 text-red-700">
+                                <li>Stay calm and assess the situation</li>
+                                <li>Call the nearest emergency vet immediately</li>
+                                <li>Follow their instructions for immediate care</li>
+                                <li>Prepare for transport if necessary</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6 bg-blue-50 dark:bg-gray-800 p-4 rounded-lg theme-transition">
+                    <h3 class="text-xl font-bold mb-3">Find Nearby Veterinary Clinics</h3>
+                    <div class="flex gap-4 mb-4">
+                        <button onclick="getCurrentLocation()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center">
+                            <i class="fas fa-location-dot mr-2"></i>
+                            Use My Location
+                        </button>
+                        <div class="flex-1">
+                            <input type="text" id="locationInput" placeholder="Or enter your location (e.g., city, zip code)" 
+                                class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        </div>
+                        <button onclick="searchLocation()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Search
+                        </button>
+                    </div>
+                    <div id="locationStatus" class="text-sm text-gray-600"></div>
+                </div>
+
+                <div id="vetList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="vet-card bg-white dark:bg-gray-900 rounded-lg shadow p-4 border-l-4 border-blue-500 theme-transition">
+                        <h3 class="text-xl font-bold mb-2">City Pet Emergency Hospital</h3>
+                        <p class="text-gray-600 mb-2">24/7 Emergency Care</p>
+                        <p class="text-gray-600 mb-2">📞 Emergency: (555) 911-PETS</p>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <span class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded">Emergency Care</span>
+                            <span class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded">Critical Care</span>
+                        </div>
+                        <button onclick="callVet('555-911-PETS')" class="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                            Call Now
+                        </button>
+                    </div>
+
+                    <div class="vet-card bg-white dark:bg-gray-900 rounded-lg shadow p-4 border-l-4 border-green-500 theme-transition">
+                        <h3 class="text-xl font-bold mb-2">Animal Care Center</h3>
+                        <p class="text-gray-600 mb-2">Regular & Emergency Services</p>
+                        <p class="text-gray-600 mb-2">📞 Main: (555) 123-4567</p>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded">General Care</span>
+                            <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded">Surgery</span>
+                        </div>
+                        <button onclick="callVet('555-123-4567')" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            Call Now
+                        </button>
+                    </div>
+                </div>
+
+                <div id="searchResults" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="supportSection" class="hidden">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 theme-transition">
+                <h2 class="text-2xl font-bold mb-4 dark:text-white">Customer Support</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg theme-transition">
+                        <h3 class="text-xl font-semibold mb-4 dark:text-white">Contact Us</h3>
+                        <form id="supportForm" class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Name</label>
+                                <input type="text" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                                <input type="email" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Message</label>
+                                <textarea class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 h-32 dark:bg-gray-700 dark:text-white dark:border-gray-600" required></textarea>
+                            </div>
+                            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                                Send Message
+                            </button>
+  </form>
+                    </div>
+                    <div class="dark:text-gray-200">
+                        <h3 class="text-xl font-semibold mb-4 dark:text-white">Frequently Asked Questions</h3>
+                        <div class="space-y-4">
+                            <div class="border-b dark:border-gray-700 pb-4">
+                                <h4 class="font-medium text-blue-600 dark:text-blue-400">How does the pet health assistant work?</h4>
+                                <p class="text-gray-600 dark:text-gray-300 mt-2">Our AI-powered assistant uses advanced natural language processing to understand your pet's symptoms and provide relevant health information and guidance.</p>
+                            </div>
+                            <div class="border-b dark:border-gray-700 pb-4">
+                                <h4 class="font-medium text-blue-600 dark:text-blue-400">Is this a replacement for veterinary care?</h4>
+                                <p class="text-gray-600 dark:text-gray-300 mt-2">No, our service is meant to provide initial guidance and emergency information. Always consult with a qualified veterinarian for proper diagnosis and treatment.</p>
+                            </div>
+                            <div class="border-b dark:border-gray-700 pb-4">
+                                <h4 class="font-medium text-blue-600 dark:text-blue-400">How do I find emergency vet care?</h4>
+                                <p class="text-gray-600 dark:text-gray-300 mt-2">Use our Emergency section to find nearby emergency veterinary services. In case of emergencies, the system will automatically provide contact information for immediate care.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="aboutSection" class="hidden">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 theme-transition">
+                <h2 class="text-2xl font-bold mb-4">About Pet Health Assistant</h2>
+                <div class="prose max-w-none">
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Our Mission</h3>
+                        <p class="text-gray-600">
+                            We're dedicated to providing immediate, reliable pet health information and emergency guidance to pet owners. 
+                            Our AI-powered platform combines advanced technology with veterinary knowledge to help you make informed decisions 
+                            about your pet's health.
+                        </p>
+                    </div>
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold mb-4">How We Help</h3>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <i class="fas fa-robot text-blue-500 text-2xl mb-2"></i>
+                                <h4 class="font-medium mb-2">AI Assistant</h4>
+                                <p class="text-sm text-gray-600">24/7 intelligent responses to your pet health questions</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <i class="fas fa-hospital text-green-500 text-2xl mb-2"></i>
+                                <h4 class="font-medium mb-2">Emergency Care</h4>
+                                <p class="text-sm text-gray-600">Quick access to emergency veterinary services</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <i class="fas fa-book-medical text-purple-500 text-2xl mb-2"></i>
+                                <h4 class="font-medium mb-2">Health Education</h4>
+                                <p class="text-sm text-gray-600">Comprehensive pet health information and resources</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Our Technology</h3>
+                        <p class="text-gray-600">
+                            Powered by advanced AI and machine learning, our platform uses the latest natural language processing 
+                            technology to understand pet health concerns and provide accurate, relevant information. We continuously 
+                            update our knowledge base to ensure you receive the most current and reliable guidance.
+                        </p>
+                    </div>
+                </div>
+            </div>
+</div>
+
+        <div id="loginSection" class="hidden">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 theme-transition">
+                <form onsubmit="handleLogin(event)" class="auth-form">
+                    <h2 class="text-2xl font-bold mb-6 text-center dark:text-white">Login</h2>
+                    <div class="form-group">
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                        <input type="email" id="loginEmail" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                        <input type="password" id="loginPassword" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Login
+                    </button>
+                    <p class="text-center mt-4 text-gray-600 dark:text-gray-400">
+                        Don't have an account? 
+                        <a href="#" onclick="showRegister()" class="text-blue-500 hover:text-blue-700">Register here</a>
+                    </p>
+  </form>
+</div>
+        </div>
+
+        <div id="registerSection" class="hidden">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 theme-transition">
+                <form onsubmit="handleRegister(event)" class="auth-form">
+                    <h2 class="text-2xl font-bold mb-6 text-center">Create Account</h2>
+                    <div class="form-group">
+                        <label class="block text-gray-700 mb-2">Full Name</label>
+                        <input type="text" id="registerName" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-gray-700 mb-2">Email</label>
+                        <input type="email" id="registerEmail" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-gray-700 mb-2">Password</label>
+                        <input type="password" id="registerPassword" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-gray-700 mb-2">Confirm Password</label>
+                        <input type="password" id="registerConfirmPassword" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Create Account
+                    </button>
+                    <p class="text-center mt-4 text-gray-600">
+                        Already have an account? 
+                        <a href="#" onclick="showLogin()" class="text-blue-500 hover:text-blue-700">Login here</a>
+                    </p>
+        </form>
+            </div>
+        </div>
+
+        <div id="adminSection" class="hidden">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 theme-transition">
+                <h2 class="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h2>
+                
+                <!-- User Management -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 dark:text-white">User Management</h3>
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full" id="userTable">
+                                <thead>
+                                    <tr class="bg-gray-100 dark:bg-gray-700">
+                                        <th class="px-4 py-2 text-left dark:text-white">Email</th>
+                                        <th class="px-4 py-2 text-left dark:text-white">Status</th>
+                                        <th class="px-4 py-2 text-left dark:text-white">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody" class="dark:text-gray-300">
+                                    <!-- Users will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support Messages -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 dark:text-white">Support Messages</h3>
+                    <div class="space-y-4" id="supportMessages">
+                        <!-- Messages will be populated here -->
+                    </div>
+                </div>
+
+                <!-- User Activity Log -->
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold mb-4 dark:text-white">User Activity</h3>
+                    <div id="userActivity"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+        function showChat() {
+            document.getElementById('chatSection').classList.remove('hidden');
+            document.getElementById('vetSection').classList.add('hidden');
+            document.getElementById('supportSection').classList.add('hidden');
+            document.getElementById('aboutSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registerSection').classList.add('hidden');
+        }
+
+        function showVets() {
+            document.getElementById('chatSection').classList.add('hidden');
+            document.getElementById('vetSection').classList.remove('hidden');
+            document.getElementById('supportSection').classList.add('hidden');
+            document.getElementById('aboutSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registerSection').classList.add('hidden');
+        }
+
+        function showSupport() {
+            hideAllSections();
+            document.getElementById('supportSection').classList.remove('hidden');
+        }
+
+        function showAbout() {
+            hideAllSections();
+            document.getElementById('aboutSection').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            hideAllSections();
+            document.getElementById('loginSection').classList.remove('hidden');
+        }
+
+        function showRegister() {
+            hideAllSections();
+            document.getElementById('registerSection').classList.remove('hidden');
+        }
+
+        function hideAllSections() {
+            document.getElementById('chatSection').classList.add('hidden');
+            document.getElementById('vetSection').classList.add('hidden');
+            document.getElementById('supportSection').classList.add('hidden');
+            document.getElementById('aboutSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('registerSection').classList.add('hidden');
+        }
+
+        // Add this variable at the top of your <script> section
+let lastActiveSymptoms = [];
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            const messagesDiv = document.getElementById('messages');
+
+            // If neither message nor image, return
+            if (!message && imagePreview.classList.contains('hidden')) return;
+
+            // Add user message to chat if there is text
+            if (message) {
+            addMessageToChat(message, true);
+            messageInput.value = '';
+            }
+
+            // Show initial loading message
+            const loadingId = 'loading-' + Date.now();
+            addLoadingMessage(loadingId);
+
+            try {
+                // If there's an image, process it first
+                let imageAnalysis = '';
+                if (!imagePreview.classList.contains('hidden')) {
+                    const imageData = previewImg.src;
+                    imageAnalysis = await analyzeImage(imageData);
+                    removeImage();
+                }
+
+                // Process the text message
+                if (message) {
+                    // Remove loading message
+                    const loadingMsg = document.getElementById(loadingId);
+                    if (loadingMsg) loadingMsg.remove();
+
+                    // Check for emergency keywords
+            const emergencyKeywords = ['emergency', 'urgent', 'bleeding', 'poison', 'accident', 'dying', 'vomiting', 'unconscious'];
+            if (emergencyKeywords.some(keyword => message.toLowerCase().includes(keyword))) {
+                        addMessageToChat("🚨 This sounds like an emergency situation. Please contact emergency veterinary care immediately. I'm showing you the emergency contacts now.", false);
+                showVets();
+                return;
+            }
+
+            try {
+                        // Initialize comprehensive symptoms object
+                        const symptoms = {
+                            general: {
+                                lethargy: false,
+                                appetite_loss: false,
+                                weight_loss: false,
+                                fever: false,
+                                shivering: false,
+                                behavior_changes: false,
+                                weakness: false,
+                                pale_gums: false,
+                                swollen_lymph_nodes: false,
+                                excessive_thirst: false,
+                                normal_thirst: false,
+                                not_drinking: false,
+                                collapse: false
+                            },
+                            digestive: {
+                                vomiting: false,
+                                diarrhea: false,
+                                bloody_diarrhea: false,
+                                bloated_belly: false,
+                                unsuccessful_retching: false,
+                                scooting: false
+                            },
+                            eyes: {
+                                white_pupils: false,
+                                cloudy_eyes: false,
+                                eye_discharge: false,
+                                squinting: false,
+                                red_eyes: false,
+                                swollen_eyelids: false,
+                                pawing_at_eyes: false,
+                                excessive_tearing: false
+                            },
+                            skin: {
+                                itching: false,
+                                red_skin: false,
+                                hair_loss: false,
+                                scabs: false,
+                                lumps: false,
+                                fleas: false,
+                                ticks: false
+                            },
+                            ears: {
+                                head_shaking: false,
+                                ear_scratching: false,
+                                ear_odor: false,
+                                ear_discharge: false,
+                                ear_redness: false
+                            },
+                            mobility: {
+                                limping: false,
+                                stiffness: false,
+                                difficulty_rising: false,
+                                bunny_hopping: false,
+                                reluctance_to_jump: false
+                            },
+                            respiratory: {
+                                coughing: false,
+                                sneezing: false,
+                                nasal_discharge: false,
+                                difficulty_breathing: false
+                            },
+                            urinary: {
+                                frequent_urination: false,
+                                painful_urination: false,
+                                blood_in_urine: false,
+                                accidents: false
+                            },
+                            neurological: {
+                                seizures: false,
+                                disorientation: false,
+                                head_tilt: false,
+                                circling: false,
+                                confusion: false
+                            },
+                            dental: {
+                                bad_breath: false,
+                                tartar: false,
+                                bleeding_gums: false,
+                                difficulty_eating: false
+                            },
+                            duration: {
+                                recent: false,
+                                days: false,
+                                weeks: false,
+                                getting_worse: false,
+                                getting_better: false,
+                                sudden: false,
+                                value: null
+                            },
+                            environment: {
+                                new_food: false,
+                                outdoor_exposure: false,
+                                weather_changes: false,
+                                new_environment: false,
+                                other_animals: false,
+                                recent_grooming: false,
+                                recent_boarding: false,
+                                no_changes: false
+                            }
+                        };
+
+                        // Define emergency conditions that require immediate attention
+                        const emergencyConditions = {
+                            bloat: {
+                                required: ['digestive.bloated_belly', 'digestive.unsuccessful_retching'],
+                                additional: ['general.collapse', 'respiratory.difficulty_breathing']
+                            },
+                            severe_trauma: {
+                                required: ['general.collapse'],
+                                additional: ['general.weakness', 'respiratory.difficulty_breathing']
+                            },
+                            neurological: {
+                                required: ['neurological.seizures', 'neurological.disorientation'],
+                                additional: ['general.collapse']
+                            },
+                            dehydration: {
+                                required: ['general.not_drinking'],
+                                additional: ['digestive.vomiting', 'digestive.diarrhea']
+                            },
+                            eye_emergency: {
+                                required: ['eyes.white_pupils'],
+                                additional: ['eyes.cloudy_eyes', 'eyes.red_eyes']
+                            }
+                        };
+
+                        // Educational information about conditions
+                        const conditionInfo = {
+                            dehydration: {
+                                name: "Dehydration",
+                                description: "Dehydration occurs when your pet loses more water than they take in. This is a serious condition that can quickly become life-threatening.",
+                                symptoms: [
+                                    "Not drinking water",
+                                    "Dry or sticky gums",
+                                    "Sunken eyes",
+                                    "Lethargy",
+                                    "Loss of skin elasticity"
+                                ],
+                                urgency: "EMERGENCY - Requires immediate veterinary care",
+                                complications: [
+                                    "Organ failure",
+                                    "Shock",
+                                    "Death if left untreated"
+                                ],
+                                causes: [
+                                    "Illness preventing water intake",
+                                    "Vomiting or diarrhea",
+                                    "Fever",
+                                    "Heat exposure",
+                                    "Underlying medical conditions"
+                                ]
+                            },
+                            urinary_emergency: {
+                                name: "Urinary Emergency",
+                                description: "Blood in urine (hematuria) can indicate several serious conditions affecting the urinary tract or other systems.",
+                                symptoms: [
+                                    "Blood in urine",
+                                    "Frequent urination",
+                                    "Straining to urinate",
+                                    "Pain while urinating",
+                                    "Accidents in the house"
+                                ],
+                                urgency: "EMERGENCY - Requires immediate veterinary care",
+                                complications: [
+                                    "Urinary blockage",
+                                    "Kidney damage",
+                                    "Systemic infection",
+                                    "Organ failure if untreated"
+                                ],
+                                causes: [
+                                    "Urinary tract infection",
+                                    "Bladder stones",
+                                    "Trauma",
+                                    "Cancer",
+                                    "Clotting disorders"
+                                ]
+                            },
+                            skin_condition: {
+                                name: "Skin Condition",
+                                description: "Red skin (erythema) can indicate various conditions from allergies to infections.",
+                                symptoms: [
+                                    "Red or inflamed skin",
+                                    "Itching",
+                                    "Hot spots",
+                                    "Hair loss",
+                                    "Scabs or lesions"
+                                ],
+                                urgency: "Requires veterinary evaluation",
+                                complications: [
+                                    "Secondary infections",
+                                    "Chronic skin problems",
+                                    "Behavioral changes due to discomfort"
+                                ],
+                                causes: [
+                                    "Allergies",
+                                    "Infections (bacterial/fungal)",
+                                    "Parasites",
+                                    "Autoimmune conditions",
+                                    "Environmental irritants"
+                                ]
+                            },
+                            vision_problems: {
+                                name: "Vision Problems",
+                                description: "Sudden changes in vision or difficulty seeing can indicate serious eye conditions or neurological issues that require immediate attention.",
+                                symptoms: [
+                                    "Difficulty seeing",
+                                    "Bumping into objects",
+                                    "Reluctance to move in new spaces",
+                                    "Changes in eye appearance",
+                                    "Cloudy or discolored eyes"
+                                ],
+                                urgency: "EMERGENCY - Requires immediate veterinary care",
+                                complications: [
+                                    "Permanent vision loss",
+                                    "Eye infection",
+                                    "Retinal detachment",
+                                    "Glaucoma",
+                                    "Underlying systemic diseases"
+                                ],
+                                causes: [
+                                    "Retinal problems",
+                                    "Cataracts",
+                                    "Glaucoma",
+                                    "Neurological issues",
+                                    "Trauma",
+                                    "Infections"
+                                ]
+                            }
+                        };
+
+                        // Add detection patterns for urinary issues
+                        const urinaryPatterns = {
+                            blood: [
+                                'blood in urine',
+                                'bloody urine',
+                                'peeing blood',
+                                'urinating blood',
+                                'red urine',
+                                'pink urine'
+                            ],
+                            pain: [
+                                'painful urination',
+                                'crying when peeing',
+                                'straining to pee',
+                                'difficulty urinating'
+                            ]
+                        };
+
+                        // Add detection patterns for skin issues
+                        const skinPatterns = {
+                            redness: [
+                                'red skin',
+                                'skin is red',
+                                'redness on skin',
+                                'skin redness',
+                                'inflamed skin'
+                            ],
+                            itching: [
+                                'itchy skin',
+                                'scratching a lot',
+                                'constant scratching',
+                                'itching'
+                            ]
+                        };
+
+                        // Add vision-related patterns
+                        const visionPatterns = {
+                            vision_loss: [
+                                'not seeing',
+                                'isnt seeing',
+                                'isn\'t seeing',
+                                'cant see',
+                                'can\'t see',
+                                'difficulty seeing',
+                                'trouble seeing',
+                                'vision problems',
+                                'blind',
+                                'blurry vision',
+                                'bumping into things',
+                                'walking into things'
+                            ],
+                            eye_changes: [
+                                'cloudy eyes',
+                                'eye color changed',
+                                'eyes look different',
+                                'eye discharge',
+                                'squinting'
+                            ]
+                        };
+
+                        const fullMessage = message.toLowerCase();
+
+                        // Check for appetite loss symptoms with more variations
+                        const appetiteLossPatterns = [
+                            'not eating',
+                            'wont eat',
+                            'won\'t eat',
+                            'isn\'t eating',
+                            'isnt eating',
+                            'hasn\'t eaten',
+                            'hasnt eaten',
+                            'no appetite',
+                            'poor appetite',
+                            'stopped eating',
+                            'refusing food',
+                            'refusing to eat',
+                            'doesn\'t want to eat',
+                            'doesnt want to eat',
+                            'hes not eating',
+                            'he\'s not eating',
+                            'shes not eating',
+                            'she\'s not eating',
+                            'not eat',
+                            'hes not eat',
+                            'stopped eating'
+                        ];
+
+                        // Check for water consumption patterns
+                        const waterPatterns = {
+                            normal: [
+                                'drinking water normally',
+                                'drinking normally',
+                                'normal water',
+                                'drinking fine',
+                                'drinks normally'
+                            ],
+                            excessive: [
+                                'drinking lots',
+                                'drinking lot',
+                                'drinks lots',
+                                'drinks lot',
+                                'drinking too much',
+                                'drinks too much',
+                                'excessive drinking',
+                                'drinking more',
+                                'thirsty'
+                            ],
+                            not_drinking: [
+                                'not drinking',
+                                'wont drink',
+                                'won\'t drink',
+                                'stopped drinking',
+                                'hasn\'t been drinking',
+                                'hasnt been drinking',
+                                'no water',
+                                'refusing water',
+                                'doesn\'t drink',
+                                'doesnt drink',
+                                'havent been drinking',
+                                'haven\'t been drinking',
+                                'hast been drinking',
+                                'isnt drinking',
+                                'isn\'t drinking',
+                                'isnd drinking',
+                                'not drink',
+                                'these past'
+                            ]
+                        };
+
+                        // Check for neurological symptoms
+                        const neurologicalPatterns = {
+                            seizures: [
+                                'epilepsy',
+                                'epilypsy',
+                                'epilipsy',
+                                'seizure',
+                                'convulsion',
+                                'fits',
+                                'shaking uncontrollably',
+                                'twitching',
+                                'foaming at mouth',
+                                'collapse during seizure'
+                            ],
+                            disorientation: [
+                                'confused',
+                                'disoriented',
+                                'not aware',
+                                'lost',
+                                'wandering',
+                                'doesn\'t recognize'
+                            ],
+                            head_tilt: [
+                                'head tilt',
+                                'tilting head',
+                                'head tilted'
+                            ],
+                            circling: [
+                                'walking in circles',
+                                'spinning',
+                                'circling',
+                                'going in circles'
+                            ]
+                        };
+
+                        // Check for eye-related symptoms
+                        const eyePatterns = {
+                            white_pupils: [
+                                'white puples',
+                                'white pupils',
+                                'white pupil',
+                                'pupils white',
+                                'pupil white',
+                                'eyes white'
+                            ],
+                            cloudy_eyes: [
+                                'cloudy eyes',
+                                'cloudy eye',
+                                'eyes cloudy',
+                                'eye cloudy'
+                            ]
+                        };
+
+                        // Check for timing patterns
+                        const timingPatterns = {
+                            days: [
+                                /(\d+)\s*days?\s*ago/,
+                                /started\s*(\d+)\s*days/,
+                                /stopped\s*(\d+)\s*days/,
+                                'few days',
+                                'couple days',
+                                'couple of days'
+                            ]
+                        };
+
+                        // Check for no changes patterns
+                        const noChangePatterns = [
+                            'no changes',
+                            'no change',
+                            'nothing changed',
+                            'nothing new',
+                            'nothing different',
+                            'havent been any changes',
+                            'haven\'t been any changes',
+                            'hasnt been any changes',
+                            'hasn\'t been any changes'
+                        ];
+
+                        // Check urinary symptoms
+                        for (const [symptom, patterns] of Object.entries(urinaryPatterns)) {
+                            if (patterns.some(pattern => fullMessage.includes(pattern))) {
+                                symptoms.urinary[symptom] = true;
+                            }
+                        }
+
+                        // Check skin symptoms
+                        for (const [symptom, patterns] of Object.entries(skinPatterns)) {
+                            if (patterns.some(pattern => fullMessage.includes(pattern))) {
+                                symptoms.skin[symptom] = true;
+                            }
+                        }
+
+                        // Detect symptoms
+                        if (appetiteLossPatterns.some(pattern => fullMessage.includes(pattern))) {
+                            symptoms.general.appetite_loss = true;
+                        }
+
+                        // Check water consumption
+                        if (waterPatterns.normal.some(pattern => fullMessage.includes(pattern))) {
+                            symptoms.general.normal_thirst = true;
+                        } else if (waterPatterns.excessive.some(pattern => fullMessage.includes(pattern))) {
+                            symptoms.general.excessive_thirst = true;
+                        } else if (waterPatterns.not_drinking.some(pattern => fullMessage.includes(pattern))) {
+                            symptoms.general.not_drinking = true;
+                        }
+
+                        // Check neurological symptoms
+                        for (const [symptom, patterns] of Object.entries(neurologicalPatterns)) {
+                            if (patterns.some(pattern => fullMessage.includes(pattern))) {
+                                symptoms.neurological[symptom] = true;
+                            }
+                        }
+
+                        // Check eye symptoms
+                        if (eyePatterns.white_pupils.some(pattern => fullMessage.includes(pattern))) {
+                            symptoms.eyes.white_pupils = true;
+    }
+    if (eyePatterns.cloudy_eyes.some(pattern => fullMessage.includes(pattern))) {
+                            symptoms.eyes.cloudy_eyes = true;
+    }
+
+                        // Check for timing patterns
+                        for (const pattern of timingPatterns.days) {
+                            if (typeof pattern === 'string' && fullMessage.includes(pattern)) {
+                                symptoms.duration.days = true;
+                                break;
+                            } else if (pattern instanceof RegExp) {
+                                const match = fullMessage.match(pattern);
+                                if (match) {
+                                    symptoms.duration.days = true;
+                                    if (match[1]) {
+                                        symptoms.duration.value = parseInt(match[1]);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Detect no changes
+                        if (noChangePatterns.some(pattern => fullMessage.includes(pattern)) || 
+                            fullMessage.includes('no changes in there rutine')) {
+                            symptoms.environment.no_changes = true;
+                        }
+
+                        // Check vision symptoms
+                        for (const [symptom, patterns] of Object.entries(visionPatterns)) {
+                            if (patterns.some(pattern => fullMessage.includes(pattern))) {
+                                symptoms.eyes[symptom] = true;
+                            }
+                        }
+
+                        // Collect all active symptoms
+                        let activeSymptoms = [];
+                        if (symptoms.general.not_drinking) activeSymptoms.push({type: 'dehydration', severity: 'emergency'});
+                        if (symptoms.urinary.blood) activeSymptoms.push({type: 'urinary_emergency', severity: 'emergency'});
+                        if (symptoms.skin.redness) activeSymptoms.push({type: 'skin_condition', severity: 'concerning'});
+                        if (symptoms.general.appetite_loss) activeSymptoms.push({type: 'appetite_loss', severity: 'concerning'});
+                        if (symptoms.eyes.vision_loss) activeSymptoms.push({type: 'vision_problems', severity: 'emergency'});
+
+                        // Check for critical combinations
+                        const hasCriticalCombination = (
+                            (symptoms.general.not_drinking && symptoms.urinary.blood) || // Dehydration + Blood in urine
+                            (symptoms.general.not_drinking && symptoms.eyes.eye_changes) || // Dehydration + Eye changes
+                            (symptoms.urinary.blood && symptoms.eyes.eye_changes) // Blood in urine + Eye changes
+                        );
+
+                        // Generate response based on detected symptoms
+                        if (activeSymptoms.length > 0) {
+                            let response = "";
+                            const emergencySymptoms = activeSymptoms.filter(s => s.severity === 'emergency');
+                            
+                            if (emergencySymptoms.length > 0) {
+                                response = "🚨 EMERGENCY: Your pet needs immediate veterinary attention!\n\n";
+                                
+                                if (hasCriticalCombination) {
+                                    response += "⚠️ CRITICAL: Multiple serious symptoms detected that could indicate a severe medical emergency!\n\n";
+                                }
+                                
+                                response += "I've detected these serious symptoms:\n\n";
+                                
+                                // List all symptoms first
+                                activeSymptoms.forEach(symptom => {
+                                    const info = conditionInfo[symptom.type];
+                                    if (info) {
+                                        response += `${info.name}:\n`;
+                                        response += `• ${info.description}\n`;
+                                        if (symptoms.duration.value) {
+                                            response += `• Started ${symptoms.duration.value} days ago\n`;
+                                        }
+                                        response += "\n";
+                                    }
+                                });
+
+                                if (hasCriticalCombination) {
+                                    response += "CRITICAL COMBINATION WARNING:\n";
+                                    if (symptoms.general.not_drinking && symptoms.urinary.blood) {
+                                        response += "• The combination of blood in urine and not drinking water can rapidly lead to severe dehydration and kidney damage\n";
+                                    }
+                                    if (symptoms.general.not_drinking && symptoms.eyes.eye_changes) {
+                                        response += "• Eye changes combined with not drinking could indicate systemic conditions affecting multiple organs\n";
+                                    }
+                                    if (symptoms.urinary.blood && symptoms.eyes.eye_changes) {
+                                        response += "• The combination of urinary and eye symptoms might indicate a serious systemic condition\n";
+                                    }
+                                    response += "\n";
+                                }
+
+                                response += "These conditions require IMMEDIATE veterinary care because:\n";
+                                emergencySymptoms.forEach(symptom => {
+                                    const info = conditionInfo[symptom.type];
+                                    if (info) {
+                                        response += "\nPossible complications of " + info.name + ":\n";
+                                        info.complications.forEach(complication => {
+                                            response += `• ${complication}\n`;
+                                        });
+                                    }
+                                });
+
+                                response += "\nI'll show you the nearest emergency veterinary clinics.";
+                                
+                                addMessageToChat(response, false);
+                                showVets();
+                                return;
+                } else {
+                                // Handle non-emergency but concerning symptoms
+                                response = "I understand your pet has several symptoms that need attention:\n\n";
+                                activeSymptoms.forEach(symptom => {
+                                    const info = conditionInfo[symptom.type];
+                                    if (info) {
+                                        response += `${info.name}:\n`;
+                                        response += `• ${info.description}\n`;
+                                        response += "Common symptoms to watch for:\n";
+                                        info.symptoms.forEach(s => {
+                                            response += `• ${s}\n`;
+                                        });
+
+                                        // Add possible causes for appetite loss
+                    if (symptom.type === 'appetite_loss') {
+                        response += "\nPossible causes for not eating food include:\n";
+                        response += "• Dental problems (painful teeth or gums)\n";
+                        response += "• Infection or illness (fever, organ issues)\n";
+                        response += "• Gastrointestinal blockage\n";
+                        response += "• Cancer\n";
+                        response += "• Pain from injury or other sources\n";
+                        response += "• Stress or anxiety\n";
+                        response += "• Recent changes in food or environment\n";
+                        response += "• Digestive upset\n";
+                    }
+
+                    // Add possible causes for not drinking water
+                    if (symptom.type === 'dehydration') {
+                        response += "\nPossible causes for not drinking water include:\n";
+                        response += "• Illness causing nausea or pain\n";
+                        response += "• Mouth pain (dental disease, ulcers)\n";
+                        response += "• Fever\n";
+                        response += "• Recent vomiting or diarrhea\n";
+                        response += "• Stress or anxiety\n";
+                        response += "• Change in water source or bowl\n";
+                        response += "• Underlying medical conditions (kidney disease, etc.)\n";
+                    }
+
+                    // Add possible causes for itching
+                    if (symptom.type === 'skin_condition' || symptom.type === 'itching') {
+                        response += "\nPossible causes for itching include:\n";
+                        response += "• Fleas or other parasites (like mites)\n";
+                        response += "• Allergies (food or environmental)\n";
+                        response += "• Skin infections (bacterial or fungal)\n";
+                        response += "• Dry skin\n";
+                        response += "• Recent grooming products or chemicals\n";
+                        response += "• Underlying medical conditions\n";
+                    }
+                    response += "\n";
+                                    }
+                                });
+                                
+                                response += "While these symptoms are concerning, they may not require emergency care. However, you should schedule a veterinary appointment soon for proper evaluation and treatment.";
+                                
+                                addMessageToChat(response, false);
+                                return;
+                            }
+                        }
+
+                        // If no symptoms were detected, ask for more information with examples
+                        let response = "I understand you're concerned about your pet. To help better, please tell me:\n\n";
+                        response += "• What specific symptoms are you seeing? (Examples: difficulty seeing, bumping into things, changes in eye appearance)\n";
+                        response += "• When did these symptoms start? (Examples: today, 2 days ago, last week)\n";
+                        response += "• Have there been any changes in behavior or routine?\n";
+                        response += "• Are there any other symptoms you've noticed?\n";
+                        response += "• Have you noticed any changes in the appearance of their eyes?";
+                        
+                        addMessageToChat(response, false);
+
+                    } catch (error) {
+                        console.error('Error processing symptoms:', error);
+                        addMessageToChat("I encountered an error while processing your message. Please try describing your pet's symptoms again, being as specific as possible about what you're seeing and when it started.", false);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error in chat:', error);
+                const loadingMsg = document.getElementById(loadingId);
+                if (loadingMsg) loadingMsg.remove();
+                addMessageToChat("I encountered an error. Please try describing your pet's symptoms again, focusing on:\n\n" +
+                               "• What symptoms you're seeing\n" +
+                               "• When they started\n" +
+                               "• Any changes in behavior or routine", false);
+            }
+
+            // Add this variable at the top of your <script> section
+            let lastActiveSymptoms = [];
+
+            // After collecting activeSymptoms:
+            lastActiveSymptoms = activeSymptoms;
+
+            // Before the "If no symptoms were detected" block, add:
+            if (
+                ['what would you recommend', 'what do you recommend', 'what should i do', 'any advice', 'what can i do'].some(q => fullMessage.includes(q))
+                && lastActiveSymptoms.length > 0
+            ) {
+                let advice = "Based on your previous message, here are my recommendations:\n\n";
+                lastActiveSymptoms.forEach(symptom => {
+                    if (symptom.type === 'appetite_loss') {
+                        advice += "• Loss of appetite: Try offering bland food like boiled chicken and rice. Ensure your pet is drinking water. If your pet hasn't eaten for more than 24-48 hours, or is showing other symptoms, see a veterinarian.\n\n";
+                    }
+                    if (symptom.type === 'skin_condition' || symptom.type === 'itching') {
+                        advice += "• Itching: Check for fleas, ticks, or skin redness. Bathe your pet with a gentle, pet-safe shampoo. If itching persists or skin looks abnormal, consult your vet.\n\n";
+                    }
+                    // Add more symptom-specific advice as needed
+                });
+                advice += "If symptoms worsen or new symptoms appear, contact your veterinarian promptly.";
+                addMessageToChat(advice, false);
+                return;
+            }
+
+        }
+
+        function addLoadingMessage(loadingId) {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = loadingId;
+            loadingDiv.className = 'flex items-start mb-4';
+            loadingDiv.innerHTML = `
+                <div class="flex-shrink-0 mr-3">
+                    <i class="fas fa-robot text-blue-500 text-2xl"></i>
+                </div>
+                <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 theme-transition">
+                    <div class="flex items-center">
+                        <div class="dot-typing"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('messages').appendChild(loadingDiv);
+        }
+
+        async function analyzeImage(imageData) {
+            try {
+                // Convert base64 to blob
+                const base64Data = imageData.split(',')[1];
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+                const response = await fetch('https://api-inference.huggingface.co/models/microsoft/resnet-50', {
+                    method: 'POST',
+        headers: {
+                        'Authorization': 'Bearer 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'
+                    },
+                    body: blob
+                });
+
+    if (!response.ok) {
+                    throw new Error('Failed to analyze image');
+                }
+
+                const result = await response.json();
+                
+                let analysis = "Based on the image analysis:\n\n";
+                
+                if (Array.isArray(result)) {
+                    result.slice(0, 3).forEach((item, index) => {
+                        const confidence = (item.score * 100).toFixed(1);
+                        analysis += `${index + 1}. ${item.label} (${confidence}% confident)\n`;
+                    });
+                } else {
+                    analysis = "I couldn't properly analyze this image. Please ensure the image is clear and try again.";
+                }
+                
+                addMessageToChat(analysis, false);
+                return analysis;
+
+            } catch (error) {
+                console.error('Error analyzing image:', error);
+                addMessageToChat("I had trouble analyzing that image. Please try uploading it again or describe what you're seeing.", false);
+                return '';
+            }
+        }
+
+        function addMessageToChat(message, isUser) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start mb-4 ${isUser ? 'justify-end' : ''}`;
+            
+            messageDiv.innerHTML = `
+                <div class="flex-shrink-0 ${isUser ? 'order-2 ml-3' : 'mr-3'}">
+                    <i class="fas ${isUser ? 'fa-user text-green-500' : 'fa-robot text-blue-500'} text-2xl"></i>
+                </div>
+                <div class="${isUser ? 'order-1' : ''} bg-${isUser ? 'green-100' : 'gray-100'} dark:bg-${isUser ? 'green-800' : 'gray-700'} rounded-lg p-3 theme-transition">
+                    <p class="dark:text-white whitespace-pre-wrap">${message}</p>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function callVet(number) {
+            alert(`Calling ${number}... (In a real app, this would initiate the call)`);
+        }
+
+        document.getElementById('messageInput').addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent default form submission
+                await sendMessage();
+            }
+        });
+
+        document.getElementById('supportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Thank you for your message. Our support team will contact you soon!');
+            this.reset();
+        });
+
+        function getCurrentLocation() {
+            const statusDiv = document.getElementById('locationStatus');
+            statusDiv.textContent = "Requesting location access...";
+
+            if (!navigator.geolocation) {
+                statusDiv.textContent = "Geolocation is not supported by your browser";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    statusDiv.textContent = "Location found! Searching for nearby clinics...";
+                    searchNearbyVets(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            statusDiv.textContent = "Location access was denied. Please enter your location manually.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            statusDiv.textContent = "Location information is unavailable. Please try again or enter manually.";
+                            break;
+                        case error.TIMEOUT:
+                            statusDiv.textContent = "Location request timed out. Please try again or enter manually.";
+                            break;
+                        default:
+                            statusDiv.textContent = "An unknown error occurred. Please try entering your location manually.";
+                            break;
+                    }
+                }
+            );
+        }
+
+        function searchLocation() {
+            const locationInput = document.getElementById('locationInput').value.trim();
+            const statusDiv = document.getElementById('locationStatus');
+            
+            if (!locationInput) {
+                statusDiv.textContent = "Please enter a location to search";
+                return;
+            }
+
+            statusDiv.textContent = "Searching for veterinary clinics...";
+            searchNearbyVets(null, null, locationInput);
+        }
+
+        function searchNearbyVets(lat, lon, searchText = '') {
+            const resultsDiv = document.getElementById('searchResults');
+            const statusDiv = document.getElementById('locationStatus');
+
+            const sampleClinics = [
+                {
+                    name: "24/7 Pet Emergency Hospital",
+                    address: "123 Main St",
+                    phone: "(555) 123-4567",
+                    emergency: true,
+                    distance: "0.8 miles"
+                },
+                {
+                    name: "City Animal Hospital",
+                    address: "456 Oak Ave",
+                    phone: "(555) 234-5678",
+                    emergency: true,
+                    distance: "1.2 miles"
+                },
+                {
+                    name: "Caring Paws Veterinary",
+                    address: "789 Pine Rd",
+                    phone: "(555) 345-6789",
+                    emergency: false,
+                    distance: "1.5 miles"
+                },
+                {
+                    name: "Pet Wellness Center",
+                    address: "321 Elm St",
+                    phone: "(555) 456-7890",
+                    emergency: false,
+                    distance: "2.0 miles"
+                }
+            ];
+
+            resultsDiv.innerHTML = '';
+
+            statusDiv.textContent = `Found ${sampleClinics.length} veterinary clinics in your area`;
+
+            sampleClinics.forEach(clinic => {
+                const clinicCard = document.createElement('div');
+                clinicCard.className = `bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 ${clinic.emergency ? 'border-red-500' : 'border-green-500'}`;
+                clinicCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">${clinic.name}</h3>
+                            <p class="text-gray-600 mb-2">📍 ${clinic.address}</p>
+                            <p class="text-gray-600 mb-2">📞 ${clinic.phone}</p>
+                            <p class="text-gray-600 mb-2">📏 ${clinic.distance}</p>
+                        </div>
+                        ${clinic.emergency ? '<span class="bg-red-100 text-red-800 text-sm px-2 py-1 rounded">24/7 Emergency</span>' : ''}
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="callVet('${clinic.phone}')" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Call Now
+                        </button>
+                        <button onclick="getDirections('${clinic.address}')" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            Get Directions
+                        </button>
+                    </div>
+                `;
+                resultsDiv.appendChild(clinicCard);
+            });
+        }
+
+        function getDirections(address) {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewDiv = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImg');
+                previewImg.src = e.target.result;
+                previewDiv.classList.remove('hidden');
+
+                analyzeImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            const previewDiv = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            const imageInput = document.getElementById('imageInput');
+            
+            previewDiv.classList.add('hidden');
+            previewImg.src = '';
+            imageInput.value = '';
+        }
+
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+            dropZone.classList.add('border-blue-500');
+});
+
+        dropZone.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+});
+
+        dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const imageInput = document.getElementById('imageInput');
+                imageInput.files = e.dataTransfer.files;
+                handleImageUpload({ target: { files: [file] } });
+            } else {
+                alert('Please upload an image file');
+            }
+        });
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            // Check for admin credentials
+            if (password === 'phpmyadmin') {
+            localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('isAdmin', 'true');
+            localStorage.setItem('userEmail', email);
+                updateAuthUI(true, true);
+            showChat();
+                addMessageToChat("Welcome, Administrator! You have full access to the system.", false);
+            } else {
+                // Regular user login
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('isAdmin', 'false');
+                localStorage.setItem('userEmail', email);
+                updateAuthUI(true, false);
+                showChat();
+            }
+            
+            event.target.reset();
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userEmail', email);
+            localStorage.setItem('userName', name);
+            updateAuthUI(true);
+            showChat();
+            
+            event.target.reset();
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            updateAuthUI(false);
+            showLogin();
+        }
+
+        function updateAuthUI(isLoggedIn, isAdmin = false) {
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (isLoggedIn) {
+                loginBtn.classList.add('hidden');
+                registerBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                
+                // Add admin indicator if admin
+                if (isAdmin) {
+                    const adminBadge = document.createElement('span');
+                    adminBadge.id = 'adminBadge';
+                    adminBadge.className = 'bg-red-500 text-white px-2 py-1 rounded-full text-sm ml-2';
+                    adminBadge.textContent = 'Admin';
+                    
+                    // Only add if it doesn't exist
+                    if (!document.getElementById('adminBadge')) {
+                        document.querySelector('h1').appendChild(adminBadge);
+                    }
+                }
+            } else {
+                loginBtn.classList.remove('hidden');
+                registerBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                
+                // Remove admin badge if exists
+                const adminBadge = document.getElementById('adminBadge');
+                if (adminBadge) {
+                    adminBadge.remove();
+                }
+            }
+        }
+
+        window.addEventListener('load', () => {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+            updateAuthUI(isLoggedIn, isAdmin);
+            if (!isLoggedIn) {
+                showLogin();
+            } else {
+                showChat();
+                if (isAdmin) {
+                    addMessageToChat("Welcome back, Administrator!", false);
+                }
+            }
+        });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                body.classList.remove('dark');
+                body.classList.add('light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                body.classList.remove('light');
+                body.classList.add('dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (savedTheme === 'dark') {
+                html.classList.add('dark');
+                body.classList.add('dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                html.classList.add('light');
+                body.classList.add('light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        });
+
+        function showAdminPanel() {
+            if (localStorage.getItem('isAdmin') !== 'true') {
+                alert('Access denied. Admin privileges required.');
+                return;
+            }
+            hideAllSections();
+            document.getElementById('adminSection').classList.remove('hidden');
+            loadAdminData();
+        }
+
+        // Handle support form submission
+        document.getElementById('supportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = this.querySelector('input[type="text"]').value;
+            const email = this.querySelector('input[type="email"]').value;
+            const message = this.querySelector('textarea').value;
+
+            // Store support message
+            const messages = JSON.parse(localStorage.getItem('supportMessages') || '[]');
+            messages.push({
+                id: Date.now(),
+                name,
+                email,
+                message,
+                date: new Date().toISOString(),
+                status: 'unread'
+            });
+            localStorage.setItem('supportMessages', JSON.stringify(messages));
+
+            alert('Thank you for your message. Our support team will contact you soon!');
+            this.reset();
+        });
+
+        function loadAdminData() {
+            loadUsers();
+            loadSupportMessages();
+            loadUserActivity(); // Add this line
+        }
+
+        function loadUsers() {
+            const userTableBody = document.getElementById('userTableBody');
+            userTableBody.innerHTML = '';
+
+            // Get users from localStorage
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'border-b dark:border-gray-700';
+                row.innerHTML = `
+                    <td class="px-4 py-2">${user.email}</td>
+                    <td class="px-4 py-2">
+                        <span class="px-2 py-1 rounded ${user.banned ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                            ${user.banned ? 'Banned' : 'Active'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-2">
+                        <button onclick="toggleUserBan('${user.email}')" 
+                                class="px-3 py-1 rounded ${user.banned ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white">
+                            ${user.banned ? 'Unban' : 'Ban'}
+                        </button>
+                    </td>
+                `;
+                userTableBody.appendChild(row);
+            });
+        }
+
+        function loadSupportMessages() {
+            const messagesContainer = document.getElementById('supportMessages');
+            messagesContainer.innerHTML = '';
+
+            // Get messages from localStorage
+            const messages = JSON.parse(localStorage.getItem('supportMessages') || '[]');
+            
+            messages.reverse().forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `bg-gray-50 dark:bg-gray-800 rounded-lg p-4 ${msg.status === 'unread' ? 'border-l-4 border-blue-500' : ''}`;
+                messageDiv.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-medium dark:text-white">${msg.name}</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">${msg.email}</p>
+                        </div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                            ${new Date(msg.date).toLocaleDateString()}
+                        </span>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mb-2">${msg.message}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm ${msg.status === 'unread' ? 'text-blue-500' : 'text-gray-500'}">
+                            ${msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
+                        </span>
+                        <button onclick="markMessageRead(${msg.id})" 
+                                class="text-sm text-blue-500 hover:text-blue-600"
+                                ${msg.status === 'read' ? 'disabled' : ''}>
+                            Mark as Read
+                        </button>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageDiv);
+            });
+        }
+
+        function loadUserActivity() {
+            const activityDiv = document.getElementById('userActivity');
+            activityDiv.innerHTML = '';
+            const userActivity = JSON.parse(localStorage.getItem('userActivity') || '{}');
+            Object.entries(userActivity).forEach(([email, messages]) => {
+                const userSection = document.createElement('div');
+                userSection.className = 'mb-4 p-2 border rounded bg-gray-50 dark:bg-gray-800';
+                userSection.innerHTML = `<strong>${email}</strong><ul class="ml-4 mt-2">${messages.map(m => `<li class="text-sm mb-1">[${new Date(m.timestamp).toLocaleString()}] ${m.message}</li>`).join('')}</ul>`;
+                activityDiv.appendChild(userSection);
+            });
+        }
+
+        function toggleUserBan(email) {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const userIndex = users.findIndex(u => u.email === email);
+            
+            if (userIndex !== -1) {
+                users[userIndex].banned = !users[userIndex].banned;
+                localStorage.setItem('users', JSON.stringify(users));
+                loadUsers();
+            }
+
+        }
+
+        function markMessageRead(messageId) {
+            const messages = JSON.parse(localStorage.getItem('supportMessages') || '[]');
+            const messageIndex = messages.findIndex(m => m.id === messageId);
+            
+            if (messageIndex !== -1) {
+                messages[messageIndex].status = 'read';
+                localStorage.setItem('supportMessages', JSON.stringify(messages));
+                loadSupportMessages();
+            }
+        }
+
+        // Track user activity for admin panel
+const userEmail = localStorage.getItem('userEmail') || 'guest';
+const userActivity = JSON.parse(localStorage.getItem('userActivity') || '{}');
+if (!userActivity[userEmail]) userActivity[userEmail] = [];
+userActivity[userEmail].push({
+    message,
+    timestamp: new Date().toISOString()
+});
+localStorage.setItem('userActivity', JSON.stringify(userActivity));
+
+        showChat();
+</script>
+</body>
+</html>
+
